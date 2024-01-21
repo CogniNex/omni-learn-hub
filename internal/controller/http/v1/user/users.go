@@ -3,16 +3,17 @@ package user
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"omni-learn-hub/internal/service"
+
+	userService "omni-learn-hub/internal/service/user"
 	"omni-learn-hub/pkg/logger"
 )
 
 type userRoutes struct {
-	userService service.Users
+	userService userService.Users
 	logger      logger.Interface
 }
 
-func NewUserRoutes(handler *gin.RouterGroup, userService service.Users, logger logger.Interface) {
+func NewUserRoutes(handler *gin.RouterGroup, userService userService.Users, logger logger.Interface) {
 	r := &userRoutes{userService: userService, logger: logger}
 	h := handler.Group("/user")
 	{

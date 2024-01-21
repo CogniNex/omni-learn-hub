@@ -1,19 +1,20 @@
 package service
 
-import service "omni-learn-hub/internal/service/userservice"
+import (
+	"omni-learn-hub/internal/repository/pgsqlrepo"
+	userService "omni-learn-hub/internal/service/user"
+)
 
 type Services struct {
-	Users Users
-}
-
-type Users interface {
+	Users userService.Users
 }
 
 type Deps struct {
+	Repos *pgsqlrepo.Repositories
 }
 
 func NewServices(deps Deps) *Services {
-	userService := service.NewUserService()
+	userService := userService.NewUserService()
 	return &Services{
 		Users: userService,
 	}

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"omni-learn-hub/config"
 	"omni-learn-hub/internal/controller/http/v1"
+	"omni-learn-hub/internal/repository/pgsqlrepo"
 	"omni-learn-hub/internal/service"
+	"omni-learn-hub/pkg/postgres"
 
 	"omni-learn-hub/pkg/httpserver"
 	"omni-learn-hub/pkg/logger"
@@ -20,15 +22,18 @@ import (
 func Run(cfg *config.Config) {
 	l := logger.New(cfg.Log.Level)
 
-	//// Repository
-	//pg, err := postgres.New(cfg.PG.URL, postgres.MaxPoolSize(cfg.PG.PoolMax))
-	//if err != nil {
-	//	l.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err))
-	//}
-	//defer pg.Close()
+	// Repository
+	pg, err := postgres.New(cfg.PG.URL, postgres.MaxPoolSize(cfg.PG.PoolMax))
+	if err != nil {
+		l.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err))
+	}
+	defer pg.Close()
 
-	// Use case
-	services := service.NewServices(service.Deps{})
+	// Services, Repos
+	repos := pgsqlrepo.NewRepositories(pg)
+	services := service.NewServices(service.Deps{
+		Repos: repos,
+	})
 
 	//// RabbitMQ RPC Server
 	//rmqRouter := amqprpc.NewRouter(translationUseCase)
@@ -54,7 +59,7 @@ func Run(cfg *config.Config) {
 	}
 
 	// Shutdown
-	err := httpServer.Shutdown()
+	err = httpServer.Shutdown()
 	if err != nil {
 		l.Error(fmt.Errorf("app - Run - httpServer.Shutdown: %w", err))
 	}

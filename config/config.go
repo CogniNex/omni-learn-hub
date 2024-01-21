@@ -30,8 +30,8 @@ type (
 
 	// PG -.
 	PG struct {
-		PoolMax int `env-required:"true" yaml:"pool_max" env:"PG_POOL_MAX"`
-		//URL     string `env-required:"true"                 env:"PG_URL"`
+		PoolMax int    `env-required:"true" yaml:"pool_max" env:"PG_POOL_MAX"`
+		URL     string `env-required:"true" yaml:"PG_URL"   env:"PG_URL"`
 	}
 )
 

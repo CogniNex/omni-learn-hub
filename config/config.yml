@@ -1,5 +1,5 @@
 app:
-  name: 'go-clean-template'
+  name: 'omni-learn-lab'
   version: '1.0.0'
 
 http:
@@ -11,6 +11,7 @@ logger:
 
 postgres:
   pool_max: 2
+  PG_URL : postgres://postgres:postgres@localhost:5432/postgres
 
 rabbitmq:
   rpc_server_exchange: 'rpc_server'
