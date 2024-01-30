@@ -3,6 +3,7 @@ package service
 import (
 	"omni-learn-hub/internal/repository/pgsqlrepo"
 	userService "omni-learn-hub/internal/service/user"
+	"omni-learn-hub/pkg/hash"
 )
 
 type Services struct {
@@ -10,13 +11,14 @@ type Services struct {
 }
 
 type Deps struct {
-	Repos *pgsqlrepo.Repositories
+	Repos  *pgsqlrepo.Repositories
+	Hasher hash.PasswordHasher
 }
 
 func NewServices(deps Deps) *Services {
-	userService := userService.NewUserService()
+	u := userService.NewUserService(deps.Repos.Users, deps.Hasher)
 	return &Services{
-		Users: userService,
+		Users: u,
 	}
 
 }

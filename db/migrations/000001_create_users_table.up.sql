@@ -5,11 +5,19 @@ CREATE TYPE "backend_type" AS ENUM('int','varchar','decimal','text','datetime','
 CREATE TABLE IF NOT EXISTS "users"(
                         "user_id" UUID PRIMARY KEY,
                         "phone_number" varchar,
-                        "otp_code" varchar,
-                        "is_otp_verified" bool,
                         "password_hash" varchar,
                         "password_salt" varchar,
-                        "refresh_token" varchar
+                        "refresh_token" varchar,
+                        "refresh_expires_in" timestamp
+);
+
+CREATE TABLE IF NOT EXISTS "otp_codes" (
+                           "otp_id" SERIAL PRIMARY KEY,
+                           "user_id" UUID,
+                           "code" VARCHAR(6) NOT NULL,
+                           "is_verified" BOOLEAN DEFAULT false,
+                           "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           "expires_at" TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "user_profiles"(
@@ -22,8 +30,8 @@ CREATE TABLE IF NOT EXISTS "user_profiles"(
                                 "language_id" int,
                                 "email" varchar,
                                 "is_active" bool,
-                                "created_at" timestamp with time zone,
-                                "updated_at" timestamp with time zone,
+                                "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+                                "updated_at" timestamp,
                                 UNIQUE ("entity_id", "entity_type_id")
 
 );
@@ -44,16 +52,16 @@ CREATE TABLE IF NOT EXISTS "user_roles"(
                               "role_id" int
 );
 
-CREATE TABLE IF NOT EXISTS "entity_properties"(
+CREATE TABLE IF NOT EXISTS "entity_attributes"(
                                      "entity_attribute_id" int PRIMARY KEY,
                                      "entity_type_id" int,
                                      "entity_id" int,
-                                     "property_id" int,
-                                     "prop_num" int,
-                                     "prop_varchar" varchar,
-                                     "prop_bool" bool,
-                                     "prop_datetime" timestamp with time zone,
-                                     "prop_decimal" decimal
+                                     "attribute_id" int,
+                                     "attr_num" int,
+                                     "attr_varchar" varchar,
+                                     "attr_bool" bool,
+                                     "attr_datetime" timestamp,
+                                     "attr_decimal" decimal
 );
 
 CREATE TABLE IF NOT EXISTS "entities"(
@@ -61,10 +69,10 @@ CREATE TABLE IF NOT EXISTS "entities"(
                             "entity_type" entity_type
 );
 
-CREATE TABLE IF NOT EXISTS "properties"(
-                              "property_id" int PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS "attributes"(
+                              "attribute_id" int PRIMARY KEY,
                               "entity_type_id" int,
-                              "property_name" varchar(255),
+                              "attribute_name" varchar(255),
                               "backend_type" backend_type,
                               "is_visible" bool,
                               "is_required" bool
@@ -80,8 +88,10 @@ ALTER TABLE IF EXISTS "user_roles" ADD FOREIGN KEY ("user_id") REFERENCES "users
 
 ALTER TABLE IF EXISTS "user_roles" ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("role_id");
 
-ALTER TABLE IF EXISTS "entity_properties" ADD FOREIGN KEY ("property_id") REFERENCES "properties" ("property_id");
+ALTER TABLE IF EXISTS "entity_attributes" ADD FOREIGN KEY ("attribute_id") REFERENCES "attributes" ("attribute_id");
 
-ALTER TABLE IF EXISTS "entity_properties" ADD FOREIGN KEY ("entity_id", "entity_type_id") REFERENCES "user_profiles" ("entity_id", "entity_type_id");
+ALTER TABLE IF EXISTS "entity_attributes" ADD FOREIGN KEY ("entity_id", "entity_type_id") REFERENCES "user_profiles" ("entity_id", "entity_type_id");
 
-ALTER TABLE IF EXISTS "properties" ADD FOREIGN KEY ("entity_type_id") REFERENCES "entities" ("entity_type_id");
+ALTER TABLE IF EXISTS "attributes" ADD FOREIGN KEY ("entity_type_id") REFERENCES "entities" ("entity_type_id");
+
+ALTER TABLE IF EXISTS "otp_codes" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id");

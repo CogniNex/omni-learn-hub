@@ -7,6 +7,7 @@ import (
 	"omni-learn-hub/internal/controller/http/v1"
 	"omni-learn-hub/internal/repository/pgsqlrepo"
 	"omni-learn-hub/internal/service"
+	"omni-learn-hub/pkg/hash"
 	"omni-learn-hub/pkg/postgres"
 
 	"omni-learn-hub/pkg/httpserver"
@@ -31,8 +32,10 @@ func Run(cfg *config.Config) {
 
 	// Services, Repos
 	repos := pgsqlrepo.NewRepositories(pg)
+	hasher := hash.NewBcryptPasswordHasher()
 	services := service.NewServices(service.Deps{
-		Repos: repos,
+		Repos:  repos,
+		Hasher: hasher,
 	})
 
 	//// RabbitMQ RPC Server

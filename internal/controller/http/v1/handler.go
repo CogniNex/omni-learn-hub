@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"omni-learn-hub/internal/controller/http/v1/user"
 	"omni-learn-hub/internal/service"
-
 	"omni-learn-hub/pkg/logger"
 
 	"github.com/gin-gonic/gin"

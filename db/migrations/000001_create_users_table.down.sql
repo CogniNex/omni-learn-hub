@@ -3,7 +3,8 @@ DROP TABLE IF EXISTS user_profiles;
 DROP TABLE IF EXISTS languages;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS user_roles;
-DROP TABLE IF EXISTS entity_properties;
+DROP TABLE IF EXISTS entity_attributes;
 DROP TABLE IF EXISTS entities;
-DROP TABLE IF EXISTS properties;
+DROP TABLE IF EXISTS attributes;
+DROP TABLE IF EXISTS otp_codes;
 
