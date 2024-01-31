@@ -6,20 +6,22 @@ import (
 )
 
 type Generator interface {
-	RandomSecret(length int) string
+	RandomSecret() string
 }
 
-type GOTPGenerator struct{}
-
-func NewGOTPGenerator() *GOTPGenerator {
-	return &GOTPGenerator{}
+type GOTPGenerator struct {
+	Length int
 }
 
-func (g *GOTPGenerator) RandomSecret(length int) string {
+func NewGOTPGenerator(length int) *GOTPGenerator {
+	return &GOTPGenerator{Length: length}
+}
+
+func (g *GOTPGenerator) RandomSecret() string {
 	var result string
-	secret := make([]byte, length)
+	secret := make([]byte, g.Length)
 	gen, err := crytporand.Read(secret)
-	if err != nil || gen != length {
+	if err != nil || gen != g.Length {
 		// error reading random, return empty string
 		return result
 	}

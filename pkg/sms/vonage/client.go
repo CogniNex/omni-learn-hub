@@ -3,8 +3,8 @@ package vonage
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
+	"omni-learn-hub/config"
 )
 
 const (
@@ -20,24 +20,28 @@ type smsRequest struct {
 }
 
 type VonageClient struct {
-	To        string
 	ApiKey    string
 	ApiSecret string
 	From      string
+	Templates config.Templates
 }
 
-func NewVonageClient(to string, apiKey string, apiSecret string, from string) *VonageClient {
+func NewVonageClient(apiKey string, apiSecret string, from string, templates config.Templates) *VonageClient {
 	return &VonageClient{
-		To:        to,
 		ApiKey:    apiKey,
 		ApiSecret: apiSecret,
 		From:      from,
+		Templates: templates,
 	}
 }
 
-func (c *VonageClient) SendSms(text string) error {
+func (c *VonageClient) GetTemplates() config.Templates {
+	return c.Templates
+}
+
+func (c *VonageClient) SendSMS(text string, to string) error {
 	reqData := smsRequest{
-		To:        c.To,
+		To:        to,
 		ApiKey:    c.ApiKey,
 		ApiSecret: c.ApiSecret,
 		From:      c.From,
@@ -69,8 +73,6 @@ func (c *VonageClient) SendSms(text string) error {
 	if err != nil {
 		return err
 	}
-
-	log.Fatalf("UserRepo - Create - r.Builder: %w", err)
 
 	return nil
 }

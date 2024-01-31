@@ -15,7 +15,65 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/users/sign-up": {
+        "/api/v1/users/get-otp": {
+            "post": {
+                "description": "user gets otp which need for registration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get Otp Code",
+                "parameters": [
+                    {
+                        "description": "get otp info",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserGetOtpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/sign-up": {
             "post": {
                 "description": "create user account",
                 "consumes": [
@@ -25,7 +83,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users-auth"
+                    "Users"
                 ],
                 "summary": "User SignUp",
                 "parameters": [
@@ -75,17 +133,40 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.UserGetOtpRequest": {
+            "type": "object",
+            "required": [
+                "phone_number"
+            ],
+            "properties": {
+                "phone_number": {
+                    "type": "string",
+                    "maxLength": 12,
+                    "minLength": 9
+                }
+            }
+        },
         "dto.UserSignUpInput": {
             "type": "object",
+            "required": [
+                "password",
+                "password_verification",
+                "phone_number"
+            ],
             "properties": {
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 8
                 },
-                "passwordVerification": {
-                    "type": "string"
+                "password_verification": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 8
                 },
-                "phoneNumber": {
-                    "type": "string"
+                "phone_number": {
+                    "type": "string",
+                    "maxLength": 13
                 }
             }
         }

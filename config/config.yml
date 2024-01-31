@@ -12,6 +12,9 @@ logger:
 postgres:
   pool_max: 2
 
+otp:
+  length: 6
+
 rabbitmq:
   rpc_server_exchange: 'rpc_server'
   rpc_client_exchange: 'rpc_client'

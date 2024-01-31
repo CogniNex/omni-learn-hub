@@ -8,7 +8,10 @@ import (
 	"omni-learn-hub/internal/repository/pgsqlrepo"
 	"omni-learn-hub/internal/service"
 	"omni-learn-hub/pkg/hash"
+	"omni-learn-hub/pkg/otp"
 	"omni-learn-hub/pkg/postgres"
+	"omni-learn-hub/pkg/sms"
+	"omni-learn-hub/pkg/sms/vonage"
 
 	"omni-learn-hub/pkg/httpserver"
 	"omni-learn-hub/pkg/logger"
@@ -30,12 +33,20 @@ func Run(cfg *config.Config) {
 	}
 	defer pg.Close()
 
-	// Services, Repos
+	// UseCases, Repos and Third Party services
 	repos := pgsqlrepo.NewRepositories(pg)
 	hasher := hash.NewBcryptPasswordHasher()
+	otpGenerator := otp.NewGOTPGenerator(cfg.OTP.Length)
+
+	vonageClient := vonage.NewVonageClient(cfg.Vonage.ApiKey, cfg.ApiSecret, cfg.SMS.From, cfg.Templates)
+
+	smsService := sms.NewSmsService(vonageClient)
+
 	services := service.NewServices(service.Deps{
 		Repos:  repos,
 		Hasher: hasher,
+		Otp:    otpGenerator,
+		SMS:    smsService,
 	})
 
 	//// RabbitMQ RPC Server

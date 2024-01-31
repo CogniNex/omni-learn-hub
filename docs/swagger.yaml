@@ -1,17 +1,73 @@
 definitions:
+  dto.UserGetOtpRequest:
+    properties:
+      phone_number:
+        maxLength: 12
+        minLength: 9
+        type: string
+    required:
+    - phone_number
+    type: object
   dto.UserSignUpInput:
     properties:
       password:
+        maxLength: 64
+        minLength: 8
         type: string
-      passwordVerification:
+      password_verification:
+        maxLength: 64
+        minLength: 8
         type: string
-      phoneNumber:
+      phone_number:
+        maxLength: 13
         type: string
+    required:
+    - password
+    - password_verification
+    - phone_number
     type: object
 info:
   contact: {}
 paths:
-  /users/sign-up:
+  /api/v1/users/get-otp:
+    post:
+      consumes:
+      - application/json
+      description: user gets otp which need for registration
+      parameters:
+      - description: get otp info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserGetOtpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ok
+          schema:
+            type: string
+        "400":
+          description: ok
+          schema:
+            type: string
+        "404":
+          description: ok
+          schema:
+            type: string
+        "500":
+          description: ok
+          schema:
+            type: string
+        default:
+          description: ok
+          schema:
+            type: string
+      summary: Get Otp Code
+      tags:
+      - Users
+  /api/v1/users/sign-up:
     post:
       consumes:
       - application/json
@@ -48,5 +104,5 @@ paths:
             type: string
       summary: User SignUp
       tags:
-      - users-auth
+      - Users
 swagger: "2.0"

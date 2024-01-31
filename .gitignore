@@ -4,6 +4,7 @@
 
 # Config
 .env
+config/config-prod.yml
 
 # Binaries for programs and plugins
 *.exe

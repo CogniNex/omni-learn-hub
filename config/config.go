@@ -9,10 +9,13 @@ import (
 
 type (
 	Config struct {
-		App  `yaml:"app"`
-		HTTP `yaml:"http"`
-		Log  `yaml:"logger"`
-		PG   `yaml:"postgres"`
+		App    `yaml:"app"`
+		HTTP   `yaml:"http"`
+		Log    `yaml:"logger"`
+		PG     `yaml:"postgres"`
+		OTP    `yaml:"otp"`
+		SMS    `yaml:"sms-service"`
+		Vonage `yaml:"vonage-client"`
 	}
 	App struct {
 		Name    string `env-required:"true" yaml:"name"    env:"APP_NAME"`
@@ -34,12 +37,30 @@ type (
 		PoolMax int    `env-required:"true" yaml:"pool_max" env:"PG_POOL_MAX"`
 		URL     string `                                    env:"PG_URL"`
 	}
+
+	OTP struct {
+		Length int `env-required:"true" yaml:"length" env:"LENGTH"`
+	}
+
+	SMS struct {
+		Templates Templates `env-required:"true" yaml:"templates"`
+		From      string    `env-requred:"true" yaml:"from"`
+	}
+
+	Vonage struct {
+		ApiKey    string `env-required:"true" yaml:"api_key"`
+		ApiSecret string `env-required:"true" yaml:"api_secret"`
+	}
+
+	Templates struct {
+		Registration string `env-required:"true" yaml:"registration"`
+	}
 )
 
 func NewConfig() (*Config, error) {
 	cfg := &Config{}
 
-	cfg, err := ParseConfigFiles("./config/config.yml", ".env")
+	cfg, err := ParseConfigFiles("./config/config-prod.yml", ".env")
 	if err != nil {
 		return nil, fmt.Errorf("config error: %w", err)
 	}
