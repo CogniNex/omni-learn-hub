@@ -20,7 +20,7 @@ type Deps struct {
 }
 
 func NewServices(deps Deps) *Services {
-	u := userService.NewUserService(deps.Repos.Users, deps.Hasher, deps.Otp, deps.SMS)
+	u := userService.NewUserService(deps.Repos.Users, deps.Repos.OtpCodes, deps.Hasher, deps.Otp, deps.SMS)
 	return &Services{
 		Users: u,
 	}

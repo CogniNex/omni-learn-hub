@@ -1,8 +1,7 @@
 package otp
 
 import (
-	crytporand "crypto/rand"
-	"encoding/base32"
+	"math/rand"
 )
 
 type Generator interface {
@@ -18,14 +17,12 @@ func NewGOTPGenerator(length int) *GOTPGenerator {
 }
 
 func (g *GOTPGenerator) RandomSecret() string {
-	var result string
-	secret := make([]byte, g.Length)
-	gen, err := crytporand.Read(secret)
-	if err != nil || gen != g.Length {
-		// error reading random, return empty string
-		return result
+	characters := "0123456789"
+	otp := make([]byte, g.Length)
+
+	for i := range otp {
+		otp[i] = characters[rand.Intn(len(characters))]
 	}
-	var encoder = base32.StdEncoding.WithPadding(base32.NoPadding)
-	result = encoder.EncodeToString(secret)
-	return result
+
+	return string(otp)
 }

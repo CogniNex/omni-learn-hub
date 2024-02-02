@@ -13,11 +13,18 @@ CREATE TABLE IF NOT EXISTS "users"(
 
 CREATE TABLE IF NOT EXISTS "otp_codes" (
                            "otp_id" SERIAL PRIMARY KEY,
-                           "user_id" UUID,
+                           "phone_number" varchar,
                            "code" VARCHAR(6) NOT NULL,
+                           "generation_attempts" int NOT NULL,
                            "is_verified" BOOLEAN DEFAULT false,
                            "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                            "expires_at" TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "otp_blacklist"(
+                                          "otp_blacklist_id" SERIAL PRIMARY KEY,
+                                          "phone_number" varchar,
+                                          "next_unblock_date" TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "user_profiles"(
@@ -37,13 +44,13 @@ CREATE TABLE IF NOT EXISTS "user_profiles"(
 );
 
 CREATE TABLE IF NOT EXISTS "languages"(
-                            "language_id" int PRIMARY KEY,
+                            "language_id" SERIAL PRIMARY KEY,
                             "language_code" varchar,
                             "language_name" varchar
 );
 
 CREATE TABLE IF NOT EXISTS "roles"(
-                         "role_id" int PRIMARY KEY,
+                         "role_id" SERIAL PRIMARY KEY,
                          "role_name" varchar(255)
 );
 
@@ -53,7 +60,7 @@ CREATE TABLE IF NOT EXISTS "user_roles"(
 );
 
 CREATE TABLE IF NOT EXISTS "entity_attributes"(
-                                     "entity_attribute_id" int PRIMARY KEY,
+                                     "entity_attribute_id" SERIAL PRIMARY KEY,
                                      "entity_type_id" int,
                                      "entity_id" int,
                                      "attribute_id" int,
@@ -65,12 +72,12 @@ CREATE TABLE IF NOT EXISTS "entity_attributes"(
 );
 
 CREATE TABLE IF NOT EXISTS "entities"(
-                            "entity_type_id" int PRIMARY KEY,
+                            "entity_type_id" SERIAL PRIMARY KEY,
                             "entity_type" entity_type
 );
 
 CREATE TABLE IF NOT EXISTS "attributes"(
-                              "attribute_id" int PRIMARY KEY,
+                              "attribute_id" SERIAL PRIMARY KEY,
                               "entity_type_id" int,
                               "attribute_name" varchar(255),
                               "backend_type" backend_type,
@@ -94,4 +101,3 @@ ALTER TABLE IF EXISTS "entity_attributes" ADD FOREIGN KEY ("entity_id", "entity_
 
 ALTER TABLE IF EXISTS "attributes" ADD FOREIGN KEY ("entity_type_id") REFERENCES "entities" ("entity_type_id");
 
-ALTER TABLE IF EXISTS "otp_codes" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id");

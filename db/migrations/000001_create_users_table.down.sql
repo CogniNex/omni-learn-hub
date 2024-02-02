@@ -7,4 +7,5 @@ DROP TABLE IF EXISTS entity_attributes;
 DROP TABLE IF EXISTS entities;
 DROP TABLE IF EXISTS attributes;
 DROP TABLE IF EXISTS otp_codes;
+DROP TABLE IF EXISTS otp_blacklist;
 
