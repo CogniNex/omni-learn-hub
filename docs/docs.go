@@ -93,7 +93,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserSignUpInput"
+                            "$ref": "#/definitions/dto.UserSignUpRequest"
                         }
                     }
                 ],
@@ -136,35 +136,39 @@ const docTemplate = `{
         "dto.UserGetOtpRequest": {
             "type": "object",
             "required": [
-                "phone_number"
+                "phoneNumber"
             ],
             "properties": {
-                "phone_number": {
+                "phoneNumber": {
                     "type": "string",
                     "maxLength": 12,
                     "minLength": 9
                 }
             }
         },
-        "dto.UserSignUpInput": {
+        "dto.UserSignUpRequest": {
             "type": "object",
             "required": [
+                "otpCode",
                 "password",
-                "password_verification",
-                "phone_number"
+                "passwordVerification",
+                "phoneNumber"
             ],
             "properties": {
+                "otpCode": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string",
                     "maxLength": 64,
                     "minLength": 8
                 },
-                "password_verification": {
+                "passwordVerification": {
                     "type": "string",
                     "maxLength": 64,
                     "minLength": 8
                 },
-                "phone_number": {
+                "phoneNumber": {
                     "type": "string",
                     "maxLength": 13
                 }

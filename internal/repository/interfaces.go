@@ -7,6 +7,7 @@ import (
 
 type Users interface {
 	Create(ctx context.Context, user entity.User) error
+	IsExist(ctx context.Context, phoneNumber string) (bool, error)
 }
 
 type OtpCodes interface {
@@ -16,4 +17,6 @@ type OtpCodes interface {
 	DeleteUserFromBlackList(ctx context.Context, phoneNumber string) error
 	GetLastValidOtpByNumber(ctx context.Context, phoneNumber string) (entity.OtpCode, error)
 	AddPhoneNumberToBlackList(ctx context.Context, phoneNumber string) error
+	VerifyOtp(ctx context.Context, phoneNumber string, code string) (entity.OtpCode, error)
+	UpdateOtpVerification(ctx context.Context, otpId int) error
 }

@@ -21,7 +21,7 @@ type UsersService struct {
 }
 
 type Users interface {
-	SignUp(ctx context.Context, input dto.UserSignUpInput) error
+	SignUp(ctx context.Context, input dto.UserSignUpRequest) error
 	GetOtp(ctx context.Context, request dto.UserGetOtpRequest) error
 }
 
@@ -35,13 +35,38 @@ func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes
 	}
 }
 
-func (s *UsersService) SignUp(ctx context.Context, input dto.UserSignUpInput) error {
-	hashed_pwd, salt, err := s.hasher.HashPassword(input.Password)
+func (s *UsersService) SignUp(ctx context.Context, request dto.UserSignUpRequest) error {
+	hashed_pwd, salt, err := s.hasher.HashPassword(request.Password)
 	if err != nil {
 		return err
 	}
+
+	if request.Password != request.PasswordVerification {
+		return fmt.Errorf("UserService - SignUp - Passwords do not match")
+	}
+
+	isUserExist, err := s.usersRepo.IsExist(ctx, request.PhoneNumber)
+
+	if err != nil {
+		return fmt.Errorf("UserService - SignUp - s.usersRepo.IsExist: %w", err)
+	}
+
+	if isUserExist {
+		return fmt.Errorf("UserService - SignUp - user already exists")
+	}
+
+	isOtpCodeCorrect, err := s.isOtpCodeCorrect(ctx, request.PhoneNumber, request.OtpCode)
+
+	if err != nil {
+		return fmt.Errorf("UserService - SignUp - s.isOtpCodeCorrect: %w", err)
+	}
+
+	if isOtpCodeCorrect == false {
+		return fmt.Errorf("UserService - SignUp - otp code is not correct")
+	}
+
 	newUser := entity.User{
-		PhoneNumber:  input.PhoneNumber,
+		PhoneNumber:  request.PhoneNumber,
 		PasswordHash: hashed_pwd,
 		PasswordSalt: salt,
 	}
@@ -95,6 +120,27 @@ func (s *UsersService) GetOtp(ctx context.Context, request dto.UserGetOtpRequest
 	return nil
 }
 
+func (s *UsersService) isOtpCodeCorrect(ctx context.Context, phoneNumber string, otpCode string) (bool, error) {
+
+	validOtp, err := s.otpCodesRepo.VerifyOtp(ctx, phoneNumber, otpCode)
+	if err != nil {
+		return false, fmt.Errorf("UserService - isOtpCodeCorrect - s.repoOtpCodes.VerifyOtp: %w", err)
+	}
+
+	if validOtp == (entity.OtpCode{}) {
+		return false, nil
+	}
+
+	err = s.otpCodesRepo.UpdateOtpVerification(ctx, validOtp.OtpID)
+
+	if err != nil {
+		return false, fmt.Errorf("UserService - isOtpCodeCorrect - s.repoOtpCodes.UpdateOtpVerification: %w", err)
+	}
+
+	return true, nil
+
+}
+
 func (s *UsersService) isUserInBlackList(ctx context.Context, phoneNumber string) (bool, error) {
 	blockedUser, err := s.otpCodesRepo.GetBlockedUserByPhoneNumber(ctx, phoneNumber)
 	if err != nil {
@@ -104,9 +150,9 @@ func (s *UsersService) isUserInBlackList(ctx context.Context, phoneNumber string
 		if blockedUser.NextUnblockDate.Before(time.Now()) {
 			err = s.otpCodesRepo.DeleteUserFromBlackList(ctx, phoneNumber)
 			if err != nil {
-				return false, fmt.Errorf("UserService - isUserBlocked - s.repoOtpCodes.DeleteUserFromBlackList: %w", err)
+				return true, fmt.Errorf("UserService - isUserBlocked - s.repoOtpCodes.DeleteUserFromBlackList: %w", err)
 			}
-
+			return false, nil
 		}
 		return true, nil
 	}

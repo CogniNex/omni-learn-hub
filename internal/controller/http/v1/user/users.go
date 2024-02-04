@@ -29,24 +29,25 @@ func NewUserRoutes(handler *gin.RouterGroup, userService userService.Users, logg
 // @ModuleID userSignUp
 // @Accept  json
 // @Produce  json
-// @Param input body dto.UserSignUpInput true "sign up info"
+// @Param input body dto.UserSignUpRequest true "sign up info"
 // @Success 201 {string} string "ok"
 // @Failure 400,404 {object} string "ok"
 // @Failure 500 {object} string "ok"
 // @Failure default {object} string "ok"
 // @Router /api/v1/users/sign-up [post]
 func (r *userRoutes) signUp(c *gin.Context) {
-	var inp dto.UserSignUpInput
-	if err := c.BindJSON(&inp); err != nil {
+	var req dto.UserSignUpRequest
+	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid input body")
 
 		return
 	}
 
-	if err := r.userService.SignUp(c.Request.Context(), dto.UserSignUpInput{
-		PhoneNumber:          inp.PhoneNumber,
-		Password:             inp.Password,
-		PasswordVerification: inp.PasswordVerification,
+	if err := r.userService.SignUp(c.Request.Context(), dto.UserSignUpRequest{
+		PhoneNumber:          req.PhoneNumber,
+		OtpCode:              req.OtpCode,
+		Password:             req.Password,
+		PasswordVerification: req.PasswordVerification,
 	}); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 

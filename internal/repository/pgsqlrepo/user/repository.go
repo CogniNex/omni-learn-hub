@@ -1,8 +1,11 @@
 package user
 
 import (
+	"errors"
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	"github.com/gofrs/uuid"
+	"github.com/jackc/pgx/v4"
 	"golang.org/x/net/context"
 	"omni-learn-hub/internal/domain/entity"
 	"omni-learn-hub/pkg/postgres"
@@ -34,4 +37,23 @@ func (r *UsersRepo) Create(ctx context.Context, user entity.User) error {
 	}
 
 	return nil
+}
+
+func (r *UsersRepo) IsExist(ctx context.Context, phoneNumber string) (bool, error) {
+	sql, args, err := r.db.Builder.
+		Select("*").
+		From("users").
+		Where(squirrel.Eq{"phone_number": phoneNumber}).
+		ToSql()
+
+	row := r.db.Pool.QueryRow(ctx, sql, args...)
+	var user entity.User
+	err = row.Scan(&user.UserID, &user.PhoneNumber)
+
+	// it doesn't work, but we should find the reason of it
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return true, nil
+
 }

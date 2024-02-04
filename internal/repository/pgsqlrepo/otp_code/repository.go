@@ -162,7 +162,7 @@ func (o *OtpCodesRepo) IncrementAttempts(ctx context.Context, otpID int, otpCode
 		Update("otp_codes").
 		SetMap(map[string]interface{}{
 			"generation_attempts": squirrel.Expr("generation_attempts + 1"),
-			"code":                squirrel.Expr(otpCode),
+			"code":                otpCode,
 		}).
 		Where(
 			squirrel.Eq{"otp_id": otpID}).
@@ -175,6 +175,59 @@ func (o *OtpCodesRepo) IncrementAttempts(ctx context.Context, otpID int, otpCode
 	_, err = o.db.Pool.Exec(ctx, sql, args...)
 	if err != nil {
 		return fmt.Errorf("OtpCodeRepo - IncrementAttempts - o.Pool.Exec: %w", err)
+	}
+
+	return nil
+}
+
+func (o *OtpCodesRepo) VerifyOtp(ctx context.Context, phoneNumber string, code string) (entity.OtpCode, error) {
+	currentTime := time.Now()
+
+	sql, args, err := o.db.Builder.
+		Select("*").
+		From("otp_codes").
+		Where(
+			squirrel.And{
+				squirrel.Eq{"phone_number": phoneNumber},
+				squirrel.Gt{"expires_at": currentTime},
+				squirrel.Eq{"code": code},
+			}).
+		OrderBy("expires_at DESC").
+		Limit(1).
+		ToSql()
+	if err != nil {
+		return entity.OtpCode{}, fmt.Errorf("OtpCodeRepo - VerifyOtp - o.Builder: %w", err)
+	}
+
+	row := o.db.Pool.QueryRow(ctx, sql, args...)
+	var otpCode entity.OtpCode
+	err = row.Scan(&otpCode.OtpID, &otpCode.Code, &otpCode.PhoneNumber, &otpCode.GenerationAttempts, &otpCode.IsVerified,
+		&otpCode.CreatedAt, &otpCode.ExpiresAt)
+	if errors.Is(err, sqlDb.ErrNoRows) {
+		return entity.OtpCode{}, fmt.Errorf("OtpCodeRepo - VerifyOtp - r.Pool.Query: %w", err)
+	}
+
+	return otpCode, nil
+}
+
+func (o *OtpCodesRepo) UpdateOtpVerification(ctx context.Context, otpId int) error {
+	// Build the SQL query using db.Builder
+	sql, args, err := o.db.Builder.
+		Update("otp_codes").
+		SetMap(map[string]interface{}{
+			"is_verified": true,
+		}).
+		Where(
+			squirrel.Eq{"otp_id": otpId}).
+		ToSql()
+
+	if err != nil {
+		return fmt.Errorf("OtpCodeRepo - UpdateOtpVerification - o.Builder: %w", err)
+	}
+
+	_, err = o.db.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("OtpCodeRepo - UpdateOtpVerification - o.Pool.Exec: %w", err)
 	}
 
 	return nil
