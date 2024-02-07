@@ -3,9 +3,11 @@ package user
 import (
 	"fmt"
 	"golang.org/x/net/context"
+	"omni-learn-hub/internal/domain/base"
 	"omni-learn-hub/internal/domain/entity"
 	"omni-learn-hub/internal/repository"
-	"omni-learn-hub/internal/service/user/dto"
+	"omni-learn-hub/internal/service/user/dto/request"
+	"omni-learn-hub/internal/service/user/dto/response"
 	"omni-learn-hub/pkg/hash"
 	"omni-learn-hub/pkg/otp"
 	"omni-learn-hub/pkg/sms"
@@ -21,8 +23,8 @@ type UsersService struct {
 }
 
 type Users interface {
-	SignUp(ctx context.Context, input dto.UserSignUpRequest) error
-	GetOtp(ctx context.Context, request dto.UserGetOtpRequest) error
+	SignUp(ctx context.Context, input request.UserSignUpRequest) base.ApiValueResponse
+	GetOtp(ctx context.Context, request request.UserGetOtpRequest) error
 }
 
 func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes, hasher hash.PasswordHasher, otp otp.Generator, sms sms.SMSClient) *UsersService {
@@ -35,34 +37,34 @@ func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes
 	}
 }
 
-func (s *UsersService) SignUp(ctx context.Context, request dto.UserSignUpRequest) error {
+func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpRequest) base.ApiValueResponse {
 	hashed_pwd, salt, err := s.hasher.HashPassword(request.Password)
 	if err != nil {
-		return err
+		return base.NewApiValueResponseWithError("system_error")
 	}
 
 	if request.Password != request.PasswordVerification {
-		return fmt.Errorf("UserService - SignUp - Passwords do not match")
+		return base.NewApiValueResponseWithError("UserService - SignUp - Passwords do not match")
 	}
 
 	isUserExist, err := s.usersRepo.IsExist(ctx, request.PhoneNumber)
 
 	if err != nil {
-		return fmt.Errorf("UserService - SignUp - s.usersRepo.IsExist: %w", err)
+		return base.NewApiValueResponseWithError("UserService - SignUp - s.usersRepo.IsExist")
 	}
 
 	if isUserExist {
-		return fmt.Errorf("UserService - SignUp - user already exists")
+		return base.NewApiValueResponseWithError("UserService - SignUp - user already exists")
 	}
 
 	isOtpCodeCorrect, err := s.isOtpCodeCorrect(ctx, request.PhoneNumber, request.OtpCode)
 
 	if err != nil {
-		return fmt.Errorf("UserService - SignUp - s.isOtpCodeCorrect: %w", err)
+		return base.NewApiValueResponseWithError("UserService - SignUp - s.isOtpCodeCorrect")
 	}
 
 	if isOtpCodeCorrect == false {
-		return fmt.Errorf("UserService - SignUp - otp code is not correct")
+		return base.NewApiValueResponseWithError("UserService - SignUp - otp code is not correct")
 	}
 
 	newUser := entity.User{
@@ -72,13 +74,14 @@ func (s *UsersService) SignUp(ctx context.Context, request dto.UserSignUpRequest
 	}
 	err = s.usersRepo.Create(ctx, newUser)
 	if err != nil {
-		return fmt.Errorf("UserService - SignUp - s.repoUsers.Create: %w", err)
+		return base.NewApiValueResponseWithError("UserService - SignUp - s.repoUsers.Create")
 	}
 
-	return nil
+	return base.NewApiValueResponse(response.UserSignUpResponse{PhoneNumber: request.PhoneNumber})
+
 }
 
-func (s *UsersService) GetOtp(ctx context.Context, request dto.UserGetOtpRequest) error {
+func (s *UsersService) GetOtp(ctx context.Context, request request.UserGetOtpRequest) error {
 
 	isBlockedUser, err := s.isUserInBlackList(ctx, request.PhoneNumber)
 

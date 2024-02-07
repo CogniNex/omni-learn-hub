@@ -1,4 +1,4 @@
-package dto
+package request
 
 type UserSignUpRequest struct {
 	PhoneNumber          string `json:"phoneNumber" binding:"required,max=13"`

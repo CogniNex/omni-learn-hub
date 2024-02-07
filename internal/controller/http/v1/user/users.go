@@ -3,7 +3,7 @@ package user
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"omni-learn-hub/internal/service/user/dto"
+	"omni-learn-hub/internal/service/user/dto/request"
 
 	userService "omni-learn-hub/internal/service/user"
 	"omni-learn-hub/pkg/logger"
@@ -36,25 +36,29 @@ func NewUserRoutes(handler *gin.RouterGroup, userService userService.Users, logg
 // @Failure default {object} string "ok"
 // @Router /api/v1/users/sign-up [post]
 func (r *userRoutes) signUp(c *gin.Context) {
-	var req dto.UserSignUpRequest
+	var req request.UserSignUpRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid input body")
 
 		return
 	}
 
-	if err := r.userService.SignUp(c.Request.Context(), dto.UserSignUpRequest{
+	response := r.userService.SignUp(c.Request.Context(), request.UserSignUpRequest{
 		PhoneNumber:          req.PhoneNumber,
 		OtpCode:              req.OtpCode,
 		Password:             req.Password,
 		PasswordVerification: req.PasswordVerification,
-	}); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+	})
+
+	if response.Success == false {
+		c.AbortWithStatusJSON(http.StatusBadRequest, response)
 
 		return
 	}
 
 	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, response)
+
 }
 
 // @Summary Get Otp Code
@@ -71,14 +75,14 @@ func (r *userRoutes) signUp(c *gin.Context) {
 // @Router /api/v1/users/get-otp [post]
 func (r *userRoutes) getOtp(c *gin.Context) {
 
-	var inp dto.UserGetOtpRequest
+	var inp request.UserGetOtpRequest
 	if err := c.BindJSON(&inp); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid input body")
 
 		return
 	}
 
-	if err := r.userService.GetOtp(c.Request.Context(), dto.UserGetOtpRequest{
+	if err := r.userService.GetOtp(c.Request.Context(), request.UserGetOtpRequest{
 		PhoneNumber: inp.PhoneNumber,
 	}); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
