@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserGetOtpRequest"
+                            "$ref": "#/definitions/request.UserGetOtpRequest"
                         }
                     }
                 ],
@@ -93,7 +93,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserSignUpRequest"
+                            "$ref": "#/definitions/request.UserSignUpRequest"
                         }
                     }
                 ],
@@ -133,7 +133,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.UserGetOtpRequest": {
+        "request.UserGetOtpRequest": {
             "type": "object",
             "required": [
                 "phoneNumber"
@@ -146,15 +146,23 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserSignUpRequest": {
+        "request.UserSignUpRequest": {
             "type": "object",
             "required": [
+                "firstName",
+                "lastName",
                 "otpCode",
                 "password",
-                "passwordVerification",
-                "phoneNumber"
+                "phoneNumber",
+                "roleId"
             ],
             "properties": {
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
                 "otpCode": {
                     "type": "string"
                 },
@@ -163,14 +171,12 @@ const docTemplate = `{
                     "maxLength": 64,
                     "minLength": 8
                 },
-                "passwordVerification": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 8
-                },
                 "phoneNumber": {
                     "type": "string",
                     "maxLength": 13
+                },
+                "roleId": {
+                    "type": "integer"
                 }
             }
         }

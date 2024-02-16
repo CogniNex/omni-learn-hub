@@ -13,9 +13,9 @@ func NewApiValueResponse(value interface{}) ApiValueResponse {
 	}
 }
 
-func NewApiValueResponseWithError(errorMsg string) ApiValueResponse {
+func NewApiValueResponseWithError(errorMsg ...string) ApiValueResponse {
 	return ApiValueResponse{
-		ApiResponse: NewApiResponseWithError(errorMsg),
+		ApiResponse: NewApiResponseWithError(errorMsg...),
 		Success:     false,
 	}
 }

@@ -29,10 +29,10 @@ CREATE TABLE IF NOT EXISTS "otp_blacklist"(
 
 CREATE TABLE IF NOT EXISTS "user_profiles"(
                                 "user_id" UUID PRIMARY KEY,
-                                "name" varchar,
+                                "first_name" varchar,
                                 "entity_id" int,
                                 "entity_type_id" int,
-                                "surname" varchar,
+                                "last_name" varchar,
                                 "date_of_birth" date,
                                 "language_id" int,
                                 "email" varchar,
@@ -84,6 +84,28 @@ CREATE TABLE IF NOT EXISTS "attributes"(
                               "is_visible" bool,
                               "is_required" bool
 );
+
+
+CREATE OR REPLACE FUNCTION increment_entity_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.entity_id IS NULL THEN
+        -- Check if the sequence for the entity_type_id exists
+        IF NOT EXISTS(SELECT 1 FROM pg_sequences WHERE sequencename = 'entity_id_seq_' || NEW.entity_type_id) THEN
+            -- Create a new sequence for the entity_type_id if it doesn't exist
+            EXECUTE 'CREATE SEQUENCE entity_id_seq_' || NEW.entity_type_id || ' START 1';
+END IF;
+        -- Set the entity_id using the corresponding sequence
+EXECUTE 'SELECT nextval(''entity_id_seq_' || NEW.entity_type_id || ''')' INTO NEW.entity_id;
+END IF;
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trigger_increment_entity_id
+    BEFORE INSERT ON "user_profiles"
+    FOR EACH ROW EXECUTE FUNCTION increment_entity_id();
 
 ALTER TABLE IF EXISTS "user_profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id");
 

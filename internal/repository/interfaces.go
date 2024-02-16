@@ -6,7 +6,7 @@ import (
 )
 
 type Users interface {
-	Create(ctx context.Context, user entity.User) error
+	Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int) error
 	IsExist(ctx context.Context, phoneNumber string) (bool, error)
 }
 

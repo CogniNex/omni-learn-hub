@@ -4,8 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"omni-learn-hub/internal/service/user/dto/request"
+	"omni-learn-hub/pkg/utils"
 
 	userService "omni-learn-hub/internal/service/user"
+
 	"omni-learn-hub/pkg/logger"
 )
 
@@ -29,7 +31,7 @@ func NewUserRoutes(handler *gin.RouterGroup, userService userService.Users, logg
 // @ModuleID userSignUp
 // @Accept  json
 // @Produce  json
-// @Param input body dto.UserSignUpRequest true "sign up info"
+// @Param input body request.UserSignUpRequest true "sign up info"
 // @Success 201 {string} string "ok"
 // @Failure 400,404 {object} string "ok"
 // @Failure 500 {object} string "ok"
@@ -38,16 +40,17 @@ func NewUserRoutes(handler *gin.RouterGroup, userService userService.Users, logg
 func (r *userRoutes) signUp(c *gin.Context) {
 	var req request.UserSignUpRequest
 	if err := c.BindJSON(&req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid input body")
-
+		utils.ValidationError(c, err)
 		return
 	}
 
 	response := r.userService.SignUp(c.Request.Context(), request.UserSignUpRequest{
-		PhoneNumber:          req.PhoneNumber,
-		OtpCode:              req.OtpCode,
-		Password:             req.Password,
-		PasswordVerification: req.PasswordVerification,
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		PhoneNumber: req.PhoneNumber,
+		OtpCode:     req.OtpCode,
+		Password:    req.Password,
+		RoleId:      req.RoleId,
 	})
 
 	if response.Success == false {
@@ -67,7 +70,7 @@ func (r *userRoutes) signUp(c *gin.Context) {
 // @ModuleID userGetOtp
 // @Accept  json
 // @Produce  json
-// @Param input body dto.UserGetOtpRequest true "get otp info"
+// @Param input body request.UserGetOtpRequest true "get otp info"
 // @Success 201 {string} string "ok"
 // @Failure 400,404 {object} string "ok"
 // @Failure 500 {object} string "ok"
@@ -77,19 +80,21 @@ func (r *userRoutes) getOtp(c *gin.Context) {
 
 	var inp request.UserGetOtpRequest
 	if err := c.BindJSON(&inp); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid input body")
+		c.AbortWithStatusJSON(http.StatusBadRequest, err)
 
 		return
 	}
 
-	if err := r.userService.GetOtp(c.Request.Context(), request.UserGetOtpRequest{
+	response := r.userService.GetOtp(c.Request.Context(), request.UserGetOtpRequest{
 		PhoneNumber: inp.PhoneNumber,
-	}); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+	})
+	if response.Success == false {
+		c.AbortWithStatusJSON(http.StatusBadRequest, response)
 
 		return
 	}
 
 	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, response)
 
 }

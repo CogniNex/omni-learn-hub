@@ -4,10 +4,10 @@ import "time"
 
 type UserProfile struct {
 	UserID       string    `db:"user_id"`
-	Name         string    `db:"name"`
+	FirstName    string    `db:"first_name"`
 	EntityID     int       `db:"entity_id"`
 	EntityTypeID int       `db:"entity_type_id"`
-	Surname      string    `db:"surname"`
+	Lastname     string    `db:"last_name"`
 	DateOfBirth  time.Time `db:"date_of_birth"`
 	LanguageID   int       `db:"language_id"`
 	Email        string    `db:"email"`

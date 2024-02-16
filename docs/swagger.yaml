@@ -1,5 +1,5 @@
 definitions:
-  dto.UserGetOtpRequest:
+  request.UserGetOtpRequest:
     properties:
       phoneNumber:
         maxLength: 12
@@ -8,26 +8,30 @@ definitions:
     required:
     - phoneNumber
     type: object
-  dto.UserSignUpRequest:
+  request.UserSignUpRequest:
     properties:
+      firstName:
+        type: string
+      lastName:
+        type: string
       otpCode:
         type: string
       password:
         maxLength: 64
         minLength: 8
         type: string
-      passwordVerification:
-        maxLength: 64
-        minLength: 8
-        type: string
       phoneNumber:
         maxLength: 13
         type: string
+      roleId:
+        type: integer
     required:
+    - firstName
+    - lastName
     - otpCode
     - password
-    - passwordVerification
     - phoneNumber
+    - roleId
     type: object
 info:
   contact: {}
@@ -43,7 +47,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/dto.UserGetOtpRequest'
+          $ref: '#/definitions/request.UserGetOtpRequest'
       produces:
       - application/json
       responses:
@@ -81,7 +85,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/dto.UserSignUpRequest'
+          $ref: '#/definitions/request.UserSignUpRequest'
       produces:
       - application/json
       responses:

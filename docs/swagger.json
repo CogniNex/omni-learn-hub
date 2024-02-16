@@ -24,7 +24,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserGetOtpRequest"
+                            "$ref": "#/definitions/request.UserGetOtpRequest"
                         }
                     }
                 ],
@@ -82,7 +82,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserSignUpRequest"
+                            "$ref": "#/definitions/request.UserSignUpRequest"
                         }
                     }
                 ],
@@ -122,7 +122,7 @@
         }
     },
     "definitions": {
-        "dto.UserGetOtpRequest": {
+        "request.UserGetOtpRequest": {
             "type": "object",
             "required": [
                 "phoneNumber"
@@ -135,15 +135,23 @@
                 }
             }
         },
-        "dto.UserSignUpRequest": {
+        "request.UserSignUpRequest": {
             "type": "object",
             "required": [
+                "firstName",
+                "lastName",
                 "otpCode",
                 "password",
-                "passwordVerification",
-                "phoneNumber"
+                "phoneNumber",
+                "roleId"
             ],
             "properties": {
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
                 "otpCode": {
                     "type": "string"
                 },
@@ -152,14 +160,12 @@
                     "maxLength": 64,
                     "minLength": 8
                 },
-                "passwordVerification": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 8
-                },
                 "phoneNumber": {
                     "type": "string",
                     "maxLength": 13
+                },
+                "roleId": {
+                    "type": "integer"
                 }
             }
         }

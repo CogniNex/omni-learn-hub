@@ -24,7 +24,7 @@ type UsersService struct {
 
 type Users interface {
 	SignUp(ctx context.Context, input request.UserSignUpRequest) base.ApiValueResponse
-	GetOtp(ctx context.Context, request request.UserGetOtpRequest) error
+	GetOtp(ctx context.Context, request request.UserGetOtpRequest) base.ApiValueResponse
 }
 
 func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes, hasher hash.PasswordHasher, otp otp.Generator, sms sms.SMSClient) *UsersService {
@@ -41,10 +41,6 @@ func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpReq
 	hashed_pwd, salt, err := s.hasher.HashPassword(request.Password)
 	if err != nil {
 		return base.NewApiValueResponseWithError("system_error")
-	}
-
-	if request.Password != request.PasswordVerification {
-		return base.NewApiValueResponseWithError("UserService - SignUp - Passwords do not match")
 	}
 
 	isUserExist, err := s.usersRepo.IsExist(ctx, request.PhoneNumber)
@@ -72,7 +68,12 @@ func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpReq
 		PasswordHash: hashed_pwd,
 		PasswordSalt: salt,
 	}
-	err = s.usersRepo.Create(ctx, newUser)
+
+	newUserProfile := entity.UserProfile{
+		FirstName: request.FirstName,
+		Lastname:  request.LastName,
+	}
+	err = s.usersRepo.Create(ctx, newUser, newUserProfile, request.RoleId)
 	if err != nil {
 		return base.NewApiValueResponseWithError("UserService - SignUp - s.repoUsers.Create")
 	}
@@ -81,34 +82,34 @@ func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpReq
 
 }
 
-func (s *UsersService) GetOtp(ctx context.Context, request request.UserGetOtpRequest) error {
+func (s *UsersService) GetOtp(ctx context.Context, request request.UserGetOtpRequest) base.ApiValueResponse {
 
 	isBlockedUser, err := s.isUserInBlackList(ctx, request.PhoneNumber)
 
 	if err != nil {
-		return fmt.Errorf("UserService - GetOtp - s.isUserInBlackList: %w", err)
+		return base.NewApiValueResponseWithError("UserService - GetOtp - s.isUserInBlackList")
 	}
 	if isBlockedUser {
-		return fmt.Errorf("OTP generation is locked for this user: %w", err)
+		return base.NewApiValueResponseWithError("OTP generation is locked for this user")
 	}
 
 	alreadyExistedValidOtp, err := s.otpCodesRepo.GetLastValidOtpByNumber(ctx, request.PhoneNumber)
 
 	if err != nil {
-		return fmt.Errorf("UserService - GetOtp - s.otpCodesRepo.GetLastValidOtpByNumber: %w", err)
+		return base.NewApiValueResponseWithError("UserService - GetOtp - s.otpCodesRepo.GetLastValidOtpByNumber")
 	}
 
 	if alreadyExistedValidOtp != (entity.OtpCode{}) && alreadyExistedValidOtp.GenerationAttempts >= 3 {
 		err = s.otpCodesRepo.AddPhoneNumberToBlackList(ctx, request.PhoneNumber)
 		if err != nil {
-			return fmt.Errorf("UserService - GetOtp - s.otpCodesRepo.AddPhoneNumberToBlackList: %w", err)
+			return base.NewApiValueResponseWithError("UserService - GetOtp - s.otpCodesRepo.AddPhoneNumberToBlackList")
 		}
-		return nil
+		return base.NewApiValueResponseWithError("You exceeded your current otp generation attempts")
 	}
 
 	err = s.generateOtpCode(ctx, request.PhoneNumber, alreadyExistedValidOtp)
 	if err != nil {
-		return fmt.Errorf("UserService - GetOtp - s.generateOtpCode: %w", err)
+		return base.NewApiValueResponseWithError("UserService - GetOtp - s.generateOtpCode")
 	}
 
 	// logic for production
@@ -120,7 +121,7 @@ func (s *UsersService) GetOtp(ctx context.Context, request request.UserGetOtpReq
 	//	return err
 	//}
 
-	return nil
+	return base.NewApiValueResponse(response.GetOtpResponse{PhoneNumber: request.PhoneNumber})
 }
 
 func (s *UsersService) isOtpCodeCorrect(ctx context.Context, phoneNumber string, otpCode string) (bool, error) {
