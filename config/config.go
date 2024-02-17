@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -16,6 +17,7 @@ type (
 		OTP    `yaml:"otp"`
 		SMS    `yaml:"sms-service"`
 		Vonage `yaml:"vonage-client"`
+		JWT    `yaml:"JWT"`
 	}
 	App struct {
 		Name    string `env-required:"true" yaml:"name"    env:"APP_NAME"`
@@ -54,6 +56,13 @@ type (
 
 	Templates struct {
 		Registration string `env-required:"true" yaml:"registration"`
+	}
+
+	JWT struct {
+		AccessTokenExpireDuration  time.Duration `env-required:"true" yaml:"accessTokenExpireDuration"`
+		RefreshTokenExpireDuration time.Duration `env-required:"true" yaml:"refreshTokenExpireDuration"`
+		Secret                     string        `env-required:"true" yaml:"secret"`
+		RefreshSecret              string        `env-required:"true" yaml:"refreshSecret"`
 	}
 )
 

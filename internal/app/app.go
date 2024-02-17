@@ -47,6 +47,7 @@ func Run(cfg *config.Config) {
 		Hasher: hasher,
 		Otp:    otpGenerator,
 		SMS:    smsService,
+		Cfg:    cfg,
 	})
 
 	//// RabbitMQ RPC Server

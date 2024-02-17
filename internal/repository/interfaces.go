@@ -3,10 +3,11 @@ package repository
 import (
 	"golang.org/x/net/context"
 	"omni-learn-hub/internal/domain/entity"
+	"omni-learn-hub/internal/service/token/dto/response"
 )
 
 type Users interface {
-	Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int) error
+	Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int, token response.TokenResponse) error
 	IsExist(ctx context.Context, phoneNumber string) (bool, error)
 }
 

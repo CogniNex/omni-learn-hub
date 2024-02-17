@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Masterminds/squirrel"
-	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/net/context"
 	"log"
 	"omni-learn-hub/internal/domain/entity"
+	"omni-learn-hub/internal/service/token/dto/response"
 	"omni-learn-hub/pkg/postgres"
+	"time"
 )
 
 type UsersRepo struct {
@@ -20,8 +21,7 @@ func NewUsersRepo(pg *postgres.Postgres) *UsersRepo {
 	return &UsersRepo{pg}
 }
 
-func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int) error {
-	id, _ := uuid.NewV4()
+func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int, token response.TokenResponse) error {
 
 	// Begin transaction
 	tx, err := r.db.Pool.Begin(ctx)
@@ -42,8 +42,8 @@ func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile en
 	// Insert into users table
 	sqlUser, argsUser, err := r.db.Builder.
 		Insert("users").
-		Columns("user_id, phone_number, password_hash, password_salt").
-		Values(id, user.PhoneNumber, user.PasswordHash, user.PasswordSalt).
+		Columns("user_id, phone_number, password_hash, password_salt, refresh_token, refresh_expires_in").
+		Values(user.UserID, user.PhoneNumber, user.PasswordHash, user.PasswordSalt, token.RefreshToken, time.Unix(token.RefreshTokenExpireTime, 0)).
 		ToSql()
 
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile en
 	sqlUserRole, argsUser, err := r.db.Builder.
 		Insert("user_roles").
 		Columns("user_id, role_id").
-		Values(id, roleId).
+		Values(user.UserID, roleId).
 		ToSql()
 
 	if err != nil {
@@ -75,7 +75,7 @@ func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile en
 	sqlProfile, argsProfile, err := r.db.Builder.
 		Insert("user_profiles").
 		Columns("user_id, first_name, last_name, entity_type_id").
-		Values(id, userProfile.FirstName, userProfile.Lastname, roleId).
+		Values(userProfile.UserID, userProfile.FirstName, userProfile.Lastname, roleId).
 		ToSql()
 
 	if err != nil {

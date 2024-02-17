@@ -2,10 +2,13 @@ package user
 
 import (
 	"fmt"
+	"github.com/gofrs/uuid"
 	"golang.org/x/net/context"
 	"omni-learn-hub/internal/domain/base"
 	"omni-learn-hub/internal/domain/entity"
 	"omni-learn-hub/internal/repository"
+	"omni-learn-hub/internal/service/token"
+	"omni-learn-hub/internal/service/token/dto"
 	"omni-learn-hub/internal/service/user/dto/request"
 	"omni-learn-hub/internal/service/user/dto/response"
 	"omni-learn-hub/pkg/hash"
@@ -17,6 +20,7 @@ import (
 type UsersService struct {
 	usersRepo    repository.Users
 	otpCodesRepo repository.OtpCodes
+	tokenService token.TokenService
 	hasher       hash.PasswordHasher
 	otp          otp.Generator
 	sms          sms.SMSClient
@@ -27,17 +31,19 @@ type Users interface {
 	GetOtp(ctx context.Context, request request.UserGetOtpRequest) base.ApiValueResponse
 }
 
-func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes, hasher hash.PasswordHasher, otp otp.Generator, sms sms.SMSClient) *UsersService {
+func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes, hasher hash.PasswordHasher, otp otp.Generator, sms sms.SMSClient, tokenService token.TokenService) *UsersService {
 	return &UsersService{
 		usersRepo:    usersRepo,
 		otpCodesRepo: otpCodesRepo,
 		hasher:       hasher,
 		otp:          otp,
 		sms:          sms,
+		tokenService: tokenService,
 	}
 }
 
 func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpRequest) base.ApiValueResponse {
+
 	hashed_pwd, salt, err := s.hasher.HashPassword(request.Password)
 	if err != nil {
 		return base.NewApiValueResponseWithError("system_error")
@@ -63,22 +69,41 @@ func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpReq
 		return base.NewApiValueResponseWithError("UserService - SignUp - otp code is not correct")
 	}
 
+	id, _ := uuid.NewV4()
+
 	newUser := entity.User{
+		UserID:       id.String(),
 		PhoneNumber:  request.PhoneNumber,
 		PasswordHash: hashed_pwd,
 		PasswordSalt: salt,
 	}
 
 	newUserProfile := entity.UserProfile{
+		UserID:    id.String(),
 		FirstName: request.FirstName,
 		Lastname:  request.LastName,
 	}
-	err = s.usersRepo.Create(ctx, newUser, newUserProfile, request.RoleId)
+
+	tokenDto := dto.TokenDto{
+		UserId:      id,
+		FirstName:   request.FirstName,
+		LastName:    request.LastName,
+		PhoneNumber: request.PhoneNumber,
+	}
+	tokenDto.Roles = append(tokenDto.Roles, "admin")
+
+	tokenResponse, err := s.tokenService.GenerateToken(&tokenDto)
+
+	if err != nil {
+		return base.NewApiValueResponseWithError("TokenService - SignUp - s.tokenService.GenerateToken")
+	}
+
+	err = s.usersRepo.Create(ctx, newUser, newUserProfile, request.RoleId, *tokenResponse)
 	if err != nil {
 		return base.NewApiValueResponseWithError("UserService - SignUp - s.repoUsers.Create")
 	}
 
-	return base.NewApiValueResponse(response.UserSignUpResponse{PhoneNumber: request.PhoneNumber})
+	return base.NewApiValueResponse(tokenResponse)
 
 }
 
