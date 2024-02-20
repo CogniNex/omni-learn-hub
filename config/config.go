@@ -18,6 +18,7 @@ type (
 		SMS    `yaml:"sms-service"`
 		Vonage `yaml:"vonage-client"`
 		JWT    `yaml:"JWT"`
+		Wapico `yaml:"wapico-client"`
 	}
 	App struct {
 		Name    string `env-required:"true" yaml:"name"    env:"APP_NAME"`
@@ -52,6 +53,11 @@ type (
 	Vonage struct {
 		ApiKey    string `env-required:"true" yaml:"api_key"`
 		ApiSecret string `env-required:"true" yaml:"api_secret"`
+	}
+
+	Wapico struct {
+		InstanceId  string `env-required:"true" yaml:"instance_id"`
+		AccessToken string `env_required:"true" yaml:"access_token"`
 	}
 
 	Templates struct {

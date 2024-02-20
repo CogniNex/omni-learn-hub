@@ -14,16 +14,18 @@ import (
 	"omni-learn-hub/pkg/hash"
 	"omni-learn-hub/pkg/otp"
 	"omni-learn-hub/pkg/sms"
+	"omni-learn-hub/pkg/whatsapp"
 	"time"
 )
 
 type UsersService struct {
-	usersRepo    repository.Users
-	otpCodesRepo repository.OtpCodes
-	tokenService token.TokenService
-	hasher       hash.PasswordHasher
-	otp          otp.Generator
-	sms          sms.SMSClient
+	usersRepo       repository.Users
+	otpCodesRepo    repository.OtpCodes
+	tokenService    token.TokenService
+	hasher          hash.PasswordHasher
+	otp             otp.Generator
+	sms             sms.SMSClient
+	whatsappService whatsapp.WhatsappClient
 }
 
 type Users interface {
@@ -31,14 +33,16 @@ type Users interface {
 	GetOtp(ctx context.Context, request request.UserGetOtpRequest) base.ApiValueResponse
 }
 
-func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes, hasher hash.PasswordHasher, otp otp.Generator, sms sms.SMSClient, tokenService token.TokenService) *UsersService {
+func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes, hasher hash.PasswordHasher,
+	otp otp.Generator, sms sms.SMSClient, tokenService token.TokenService, whatsappService whatsapp.WhatsappClient) *UsersService {
 	return &UsersService{
-		usersRepo:    usersRepo,
-		otpCodesRepo: otpCodesRepo,
-		hasher:       hasher,
-		otp:          otp,
-		sms:          sms,
-		tokenService: tokenService,
+		usersRepo:       usersRepo,
+		otpCodesRepo:    otpCodesRepo,
+		hasher:          hasher,
+		otp:             otp,
+		sms:             sms,
+		tokenService:    tokenService,
+		whatsappService: whatsappService,
 	}
 }
 
@@ -132,19 +136,19 @@ func (s *UsersService) GetOtp(ctx context.Context, request request.UserGetOtpReq
 		return base.NewApiValueResponseWithError("You exceeded your current otp generation attempts")
 	}
 
-	err = s.generateOtpCode(ctx, request.PhoneNumber, alreadyExistedValidOtp)
+	otpCode, err := s.generateOtpCode(ctx, request.PhoneNumber, alreadyExistedValidOtp)
 	if err != nil {
 		return base.NewApiValueResponseWithError("UserService - GetOtp - s.generateOtpCode")
 	}
 
 	// logic for production
-	//templates := s.sms.GetTemplates()
+	templates := s.sms.GetTemplates()
 
-	//messageWithOtp := fmt.Sprintf(templates.Registration, otpCode)
-	//err := s.sms.SendSMS(messageWithOtp, request.PhoneNumber)
-	//if err != nil {
-	//	return err
-	//}
+	messageWithOtp := fmt.Sprintf(templates.Registration, otpCode)
+	err = s.whatsappService.SendMessage(messageWithOtp, request.PhoneNumber)
+	if err != nil {
+		return base.NewApiValueResponseWithError("UserService - SendMessage - s.whatsappService.SendMessage")
+	}
 
 	return base.NewApiValueResponse(response.GetOtpResponse{PhoneNumber: request.PhoneNumber})
 }
@@ -189,15 +193,15 @@ func (s *UsersService) isUserInBlackList(ctx context.Context, phoneNumber string
 }
 
 func (s *UsersService) generateOtpCode(ctx context.Context, phoneNumber string,
-	alreadyExistedOtpCode entity.OtpCode) error {
+	alreadyExistedOtpCode entity.OtpCode) (string, error) {
 	otpCode := s.otp.RandomSecret()
 	if alreadyExistedOtpCode != (entity.OtpCode{}) {
 		err := s.otpCodesRepo.IncrementAttempts(ctx, alreadyExistedOtpCode.OtpID, otpCode)
 		if err != nil {
-			return fmt.Errorf("UserService - generateOtpCode - s.otpCodesRepo.IncrementAttempts: %w", err)
+			return otpCode, fmt.Errorf("UserService - generateOtpCode - s.otpCodesRepo.IncrementAttempts: %w", err)
 
 		}
-		return nil
+		return otpCode, nil
 	}
 
 	newOtpCode := entity.OtpCode{
@@ -207,7 +211,7 @@ func (s *UsersService) generateOtpCode(ctx context.Context, phoneNumber string,
 
 	err := s.otpCodesRepo.Add(ctx, newOtpCode)
 	if err != nil {
-		return fmt.Errorf("UserService - generateOtpCode - s.repoOtpCodes.Add: %w", err)
+		return otpCode, fmt.Errorf("UserService - generateOtpCode - s.repoOtpCodes.Add: %w", err)
 	}
-	return nil
+	return otpCode, nil
 }

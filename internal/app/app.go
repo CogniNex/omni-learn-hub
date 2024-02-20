@@ -12,6 +12,8 @@ import (
 	"omni-learn-hub/pkg/postgres"
 	"omni-learn-hub/pkg/sms"
 	"omni-learn-hub/pkg/sms/vonage"
+	"omni-learn-hub/pkg/whatsapp"
+	"omni-learn-hub/pkg/whatsapp/wapico"
 
 	"omni-learn-hub/pkg/httpserver"
 	"omni-learn-hub/pkg/logger"
@@ -40,14 +42,19 @@ func Run(cfg *config.Config) {
 
 	vonageClient := vonage.NewVonageClient(cfg.Vonage.ApiKey, cfg.ApiSecret, cfg.SMS.From, cfg.Templates)
 
+	wapicoClient := wapico.NewWapicoClient(cfg.Wapico.InstanceId, cfg.Wapico.AccessToken)
+
 	smsService := sms.NewSmsService(vonageClient)
 
+	whatsappService := whatsapp.NewWhatsappService(wapicoClient)
+
 	services := service.NewServices(service.Deps{
-		Repos:  repos,
-		Hasher: hasher,
-		Otp:    otpGenerator,
-		SMS:    smsService,
-		Cfg:    cfg,
+		Repos:    repos,
+		Hasher:   hasher,
+		Otp:      otpGenerator,
+		SMS:      smsService,
+		Cfg:      cfg,
+		Whatsapp: whatsappService,
 	})
 
 	//// RabbitMQ RPC Server
