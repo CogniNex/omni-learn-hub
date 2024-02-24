@@ -1,9 +1,12 @@
 package entity
 
-import "time"
+import (
+	"github.com/gofrs/uuid"
+	"time"
+)
 
 type UserProfile struct {
-	UserID       string    `db:"user_id"`
+	UserID       uuid.UUID `db:"user_id"`
 	FirstName    string    `db:"first_name"`
 	EntityID     int       `db:"entity_id"`
 	EntityTypeID int       `db:"entity_type_id"`

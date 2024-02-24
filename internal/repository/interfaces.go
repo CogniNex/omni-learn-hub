@@ -3,12 +3,14 @@ package repository
 import (
 	"golang.org/x/net/context"
 	"omni-learn-hub/internal/domain/entity"
-	"omni-learn-hub/internal/service/token/dto/response"
+	tokenResponse "omni-learn-hub/internal/service/token/dto/response"
+	userReponse "omni-learn-hub/internal/service/user/dto/response"
 )
 
 type Users interface {
-	Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int, token response.TokenResponse) error
-	IsExist(ctx context.Context, phoneNumber string) (bool, error)
+	Get(ctx context.Context, phoneNumber string) (userReponse.UserDetails, error)
+	Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int, token tokenResponse.TokenResponse) error
+	RefreshToken(ctx context.Context, phoneNumber string, token tokenResponse.TokenResponse) error
 }
 
 type OtpCodes interface {

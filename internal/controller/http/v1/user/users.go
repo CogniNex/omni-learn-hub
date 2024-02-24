@@ -22,6 +22,7 @@ func NewUserRoutes(handler *gin.RouterGroup, userService userService.Users, logg
 	{
 		h.POST("/sign-up", r.signUp)
 		h.POST("/get-otp", r.getOtp)
+		h.POST("/login", r.login)
 	}
 }
 
@@ -88,6 +89,40 @@ func (r *userRoutes) getOtp(c *gin.Context) {
 	response := r.userService.GetOtp(c.Request.Context(), request.UserGetOtpRequest{
 		PhoneNumber: inp.PhoneNumber,
 	})
+	if response.Success == false {
+		c.AbortWithStatusJSON(http.StatusBadRequest, response)
+
+		return
+	}
+
+	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, response)
+}
+
+// @Summary User Login
+// @Tags Users
+// @Description user login by phone number
+// @ModuleID userLogin
+// @Accept  json
+// @Produce  json
+// @Param input body request.UserLoginRequest true "login info"
+// @Success 201 {string} string "ok"
+// @Failure 400,404 {object} string "ok"
+// @Failure 500 {object} string "ok"
+// @Failure default {object} string "ok"
+// @Router /api/v1/users/login [post]
+func (r *userRoutes) login(c *gin.Context) {
+	var req request.UserLoginRequest
+	if err := c.BindJSON(&req); err != nil {
+		utils.ValidationError(c, err)
+		return
+	}
+
+	response := r.userService.Login(c.Request.Context(), request.UserLoginRequest{
+		PhoneNumber: req.PhoneNumber,
+		Password:    req.Password,
+	})
+
 	if response.Success == false {
 		c.AbortWithStatusJSON(http.StatusBadRequest, response)
 

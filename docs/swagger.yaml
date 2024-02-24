@@ -8,6 +8,13 @@ definitions:
     required:
     - phoneNumber
     type: object
+  request.UserLoginRequest:
+    properties:
+      password:
+        type: string
+      phoneNumber:
+        type: string
+    type: object
   request.UserSignUpRequest:
     properties:
       firstName:
@@ -72,6 +79,44 @@ paths:
           schema:
             type: string
       summary: Get Otp Code
+      tags:
+      - Users
+  /api/v1/users/login:
+    post:
+      consumes:
+      - application/json
+      description: user login by phone number
+      parameters:
+      - description: login info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ok
+          schema:
+            type: string
+        "400":
+          description: ok
+          schema:
+            type: string
+        "404":
+          description: ok
+          schema:
+            type: string
+        "500":
+          description: ok
+          schema:
+            type: string
+        default:
+          description: ok
+          schema:
+            type: string
+      summary: User Login
       tags:
       - Users
   /api/v1/users/sign-up:

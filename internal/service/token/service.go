@@ -28,8 +28,8 @@ func NewTokenService(cfg *config.Config) *TokenService {
 
 func (s *TokenService) GenerateToken(token *dto.TokenDto) (*response.TokenResponse, error) {
 	td := &response.TokenResponse{}
-	td.AccessTokenExpireTime = time.Now().Add(s.cfg.AccessTokenExpireDuration * time.Minute).Unix()
-	td.RefreshTokenExpireTime = time.Now().Add(s.cfg.RefreshTokenExpireDuration * time.Minute).Unix()
+	td.AccessTokenExpireTime = time.Now().Add(s.cfg.AccessTokenExpireDuration).Unix()
+	td.RefreshTokenExpireTime = time.Now().Add(s.cfg.RefreshTokenExpireDuration).Unix()
 
 	atc := jwt.MapClaims{}
 

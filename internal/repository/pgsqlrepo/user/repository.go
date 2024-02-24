@@ -8,7 +8,8 @@ import (
 	"golang.org/x/net/context"
 	"log"
 	"omni-learn-hub/internal/domain/entity"
-	"omni-learn-hub/internal/service/token/dto/response"
+	tokenResponse "omni-learn-hub/internal/service/token/dto/response"
+	userResponse "omni-learn-hub/internal/service/user/dto/response"
 	"omni-learn-hub/pkg/postgres"
 	"time"
 )
@@ -21,7 +22,7 @@ func NewUsersRepo(pg *postgres.Postgres) *UsersRepo {
 	return &UsersRepo{pg}
 }
 
-func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int, token response.TokenResponse) error {
+func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile entity.UserProfile, roleId int, token tokenResponse.TokenResponse) error {
 
 	// Begin transaction
 	tx, err := r.db.Pool.Begin(ctx)
@@ -74,8 +75,8 @@ func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile en
 	// Insert into user_profile table
 	sqlProfile, argsProfile, err := r.db.Builder.
 		Insert("user_profiles").
-		Columns("user_id, first_name, last_name, entity_type_id").
-		Values(userProfile.UserID, userProfile.FirstName, userProfile.Lastname, roleId).
+		Columns("user_id, first_name, last_name, entity_type_id, is_active").
+		Values(userProfile.UserID, userProfile.FirstName, userProfile.Lastname, roleId, true).
 		ToSql()
 
 	if err != nil {
@@ -91,20 +92,47 @@ func (r *UsersRepo) Create(ctx context.Context, user entity.User, userProfile en
 
 }
 
-func (r *UsersRepo) IsExist(ctx context.Context, phoneNumber string) (bool, error) {
+func (r *UsersRepo) Get(ctx context.Context, phoneNumber string) (userResponse.UserDetails, error) {
 	sql, args, err := r.db.Builder.
-		Select("*").
+		Select("users.user_id", "users.phone_number", "users.password_hash", "users.password_salt",
+			"user_profiles.first_name", "user_profiles.last_name", "user_profiles.is_active").
 		From("users").
+		Join("user_profiles ON users.user_id = user_profiles.user_id").
 		Where(squirrel.Eq{"phone_number": phoneNumber}).
 		ToSql()
 
 	row := r.db.Pool.QueryRow(ctx, sql, args...)
-	var user entity.User
-	err = row.Scan(&user.UserID, &user.PhoneNumber)
+	var userDetails userResponse.UserDetails
+	err = row.Scan(&userDetails.UserID, &userDetails.PhoneNumber, &userDetails.PasswordHash,
+		&userDetails.PasswordSalt, &userDetails.FirstName, &userDetails.Lastname, &userDetails.IsActive)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
+		return userResponse.UserDetails{}, nil
 	}
-	return true, nil
+	return userDetails, nil
 
+}
+
+func (r *UsersRepo) RefreshToken(ctx context.Context, phoneNumber string, token tokenResponse.TokenResponse) error {
+	// Build the SQL query using db.Builder
+	sql, args, err := r.db.Builder.
+		Update("users").
+		SetMap(map[string]interface{}{
+			"refresh_token":      token.RefreshToken,
+			"refresh_expires_in": time.Unix(token.RefreshTokenExpireTime, 0),
+		}).
+		Where(
+			squirrel.Eq{"phone_number": phoneNumber}).
+		ToSql()
+
+	if err != nil {
+		return fmt.Errorf("UserRepo - RefreshToken - o.Builder: %w", err)
+	}
+
+	_, err = r.db.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("UserRepo - RefreshToken - o.Pool.Exec: %w", err)
+	}
+
+	return nil
 }

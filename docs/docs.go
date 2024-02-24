@@ -73,6 +73,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/users/login": {
+            "post": {
+                "description": "user login by phone number",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "User Login",
+                "parameters": [
+                    {
+                        "description": "login info",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UserLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/sign-up": {
             "post": {
                 "description": "create user account",
@@ -143,6 +201,17 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 12,
                     "minLength": 9
+                }
+            }
+        },
+        "request.UserLoginRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "phoneNumber": {
+                    "type": "string"
                 }
             }
         },

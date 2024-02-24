@@ -31,6 +31,7 @@ type UsersService struct {
 type Users interface {
 	SignUp(ctx context.Context, input request.UserSignUpRequest) base.ApiValueResponse
 	GetOtp(ctx context.Context, request request.UserGetOtpRequest) base.ApiValueResponse
+	Login(ctx context.Context, request request.UserLoginRequest) base.ApiValueResponse
 }
 
 func NewUserService(usersRepo repository.Users, otpCodesRepo repository.OtpCodes, hasher hash.PasswordHasher,
@@ -53,13 +54,13 @@ func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpReq
 		return base.NewApiValueResponseWithError("system_error")
 	}
 
-	isUserExist, err := s.usersRepo.IsExist(ctx, request.PhoneNumber)
+	user, err := s.usersRepo.Get(ctx, request.PhoneNumber)
 
 	if err != nil {
 		return base.NewApiValueResponseWithError("UserService - SignUp - s.usersRepo.IsExist")
 	}
 
-	if isUserExist {
+	if user != (response.UserDetails{}) {
 		return base.NewApiValueResponseWithError("UserService - SignUp - user already exists")
 	}
 
@@ -76,14 +77,14 @@ func (s *UsersService) SignUp(ctx context.Context, request request.UserSignUpReq
 	id, _ := uuid.NewV4()
 
 	newUser := entity.User{
-		UserID:       id.String(),
+		UserID:       id,
 		PhoneNumber:  request.PhoneNumber,
 		PasswordHash: hashed_pwd,
 		PasswordSalt: salt,
 	}
 
 	newUserProfile := entity.UserProfile{
-		UserID:    id.String(),
+		UserID:    id,
 		FirstName: request.FirstName,
 		Lastname:  request.LastName,
 	}
@@ -151,6 +152,50 @@ func (s *UsersService) GetOtp(ctx context.Context, request request.UserGetOtpReq
 	}
 
 	return base.NewApiValueResponse(response.GetOtpResponse{PhoneNumber: request.PhoneNumber})
+}
+
+func (s *UsersService) Login(ctx context.Context, request request.UserLoginRequest) base.ApiValueResponse {
+
+	user, err := s.usersRepo.Get(ctx, request.PhoneNumber)
+
+	if err != nil {
+		return base.NewApiValueResponseWithError("UserService - Login - s.usersRepo.IsExist")
+	}
+
+	if user == (response.UserDetails{}) {
+		return base.NewApiValueResponseWithError("User does not exist")
+	}
+
+	if !user.IsActive {
+		return base.NewApiValueResponseWithError("User is blocked(((")
+	}
+
+	isMatched := s.hasher.CheckPassword(request.Password, user.PasswordHash, user.PasswordSalt)
+	if !isMatched {
+		return base.NewApiValueResponseWithError("Password does not match")
+	}
+
+	tokenDto := dto.TokenDto{
+		UserId:      user.UserID,
+		FirstName:   user.FirstName,
+		LastName:    user.Lastname,
+		PhoneNumber: user.PhoneNumber,
+	}
+	tokenDto.Roles = append(tokenDto.Roles, "admin")
+
+	tokenResponse, err := s.tokenService.GenerateToken(&tokenDto)
+
+	if err != nil {
+		return base.NewApiValueResponseWithError("TokenService - SignUp - s.tokenService.GenerateToken")
+	}
+
+	err = s.usersRepo.RefreshToken(ctx, user.PhoneNumber, *tokenResponse)
+	if err != nil {
+		return base.NewApiValueResponseWithError("UserService - Login - s.repoUsers.RefreshToken")
+	}
+
+	return base.NewApiValueResponse(tokenResponse)
+
 }
 
 func (s *UsersService) isOtpCodeCorrect(ctx context.Context, phoneNumber string, otpCode string) (bool, error) {
